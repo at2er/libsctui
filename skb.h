@@ -2,6 +2,8 @@
  * A simple header only library to handle key press with `sctui`
  * in terminal user interface program.
  *
+ * @important: `get_keys_table` must be declared before include this file.
+ *
  * Option macros: #bool(defined: true, undefined: false)
  *   SKB_MAX_KEYCOMBO -> int
  *
