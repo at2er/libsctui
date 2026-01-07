@@ -88,7 +88,7 @@ void sctui_get_win(struct sctui *sctui)
 	sctui->h = ws.ws_row ? ws.ws_row : 24;
 }
 
-void sctui_grab_key(char keybuf[SCTUI_KEYBUF_SIZ])
+void sctui_grab_key(int keybuf[SCTUI_KEYBUF_SIZ])
 {
 	read(STDIN_FILENO, keybuf, 1);
 }

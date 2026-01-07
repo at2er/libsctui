@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <termios.h>
 
+#define KBACKSPACE 127
+#define KCTRL(K) ((K) & 0x1f)
 #define SCTUI_KEYBUF_SIZ 3
 
 struct sctui {
@@ -22,7 +24,7 @@ void sctui_commit(struct sctui *sctui);
 void sctui_cursor(struct sctui *sctui, int x, int y);
 void sctui_fini(void);
 void sctui_get_win(struct sctui *sctui);
-void sctui_grab_key(char keybuf[SCTUI_KEYBUF_SIZ]);
+void sctui_grab_key(int keybuf[SCTUI_KEYBUF_SIZ]);
 void sctui_hide_cursor(struct sctui *sctui);
 void sctui_init(struct sctui *sctui);
 

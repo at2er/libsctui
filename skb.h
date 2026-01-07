@@ -1,8 +1,23 @@
-/**
+/** Simple Key binding
  * A simple header only library to handle key press with `sctui`
  * in terminal user interface program.
  *
  * @important: `get_keys_table` must be declared before include this file.
+ * `const struct key *get_keys_table(void)`
+ *
+ * Keys:
+ *   - Control (ctrl):
+ *     Starting with '^' means 'ctrl + X', such as "^c" means 'ctrl + c'.
+ *     ( see **Special Characters** )
+ *
+ *   - Shift:
+ *     * Visible ascii characters: shift changes their certain key.
+ *     ( see **Special Characters** )
+ *
+ *   - Special Characters:
+ *     * Backspace: "/b"
+ *     * '^': "^^"
+ *     * '/': "//"
  *
  * Option macros: #bool(defined: true, undefined: false)
  *   SKB_MAX_KEYCOMBO -> int
@@ -24,9 +39,6 @@
  *
  *   SKB_DEFINED_ARG, SKB_DEFINED_KEY -> bool:
  *     The `union arg` or `struct key` is defined by yourself.
- *
- *   SKB_HANDLE_UNKNOWN_KEY -> function(key_buf, key_combo, key_combo_count):
- *     The unknown keys handler.
  *
  * MIT License
  *
@@ -50,7 +62,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 #define SKB_DEFINE_ARG \
 	int i; \
 	const char *s; \
@@ -64,11 +75,10 @@
 #ifndef SKB_REDEFINE
 #ifndef SKB_H
 #define SKB_H
+#include <ctype.h>
+#include <stdbool.h>
+#include <string.h>
 #include "sctui.h"
-
-#ifndef SKB_HANDLE_UNKNOWN_KEY
-#define SKB_HANDLE_UNKNOWN_KEY(KEY_BUF, KEY_COMBO, KEY_COMBO_COUNT)
-#endif
 
 #ifndef SKB_MAX_KEYCOMBO
 #define SKB_MAX_KEYCOMBO 5
@@ -93,27 +103,56 @@ struct key { SKB_DEFINE_KEY };
 #else
 #define EXP static
 #endif
-EXP char key_buf[SCTUI_KEYBUF_SIZ];
+EXP int  key_buf[SCTUI_KEYBUF_SIZ];
 EXP char key_combo[SKB_MAX_KEYCOMBO];
 EXP int  key_combo_count;
 #undef EXP
 
 /* functions */
 #ifdef SKB_HAS_IMPL
-#define FN(SIGN, ...) extern SIGN;
+#define FDECLARE ;
+#define FEXP extern
 #else
-#define FN(SIGN, ...) static SIGN __VA_ARGS__
+#define FDECLARE
+#define FEXP static
 #endif
+
+static int
+_skb_compare_key(const char *key, int pressed)
+{
+#define SPECIAL_CHR(C) (pressed == (C) && key[0] == (C) && key[1] == (C))
+	if (pressed == KBACKSPACE) {
+		if (strncmp(key, "/b", 2) == 0)
+			return 2;
+		return 0;
+	} else if (iscntrl(pressed)) {
+		if (key[0] != '^')
+			return 0;
+		if (KCTRL(key[1]) == KCTRL(pressed))
+			return 2;
+	} else if (SPECIAL_CHR('/')) {
+		return 2;
+	} else if (SPECIAL_CHR('^')) {
+		return 2;
+	}
+#undef SPECIAL_CHR
+	if (pressed != key[0])
+		return 0;
+	return 1;
+}
 
 static enum _SKB_APPLY_KEY_RESULT
 _skb_apply_key(const struct key *key)
 {
-	for (int i = 0; key_combo[i] == key->keys[i]
-			&& i < key_combo_count;
-			i++) {
+	int r;
+	for (int i = 0, ki = 0; i < key_combo_count; i++) {
+		r = _skb_compare_key(&key->keys[ki], key_combo[i]);
+		if (r < 1)
+			break;
+		ki += r;
 		if (i != key_combo_count - 1)
 			continue;
-		if (key->keys[i + 1] != '\0')
+		if (key->keys[ki] != '\0')
 			return _SKB_APPLY_KEY_USABLE_KEY;
 		key->func(&key->arg);
 		key_combo_count = 0;
@@ -122,31 +161,25 @@ _skb_apply_key(const struct key *key)
 	return _SKB_APPLY_KEY_NOT_FOUND;
 }
 
-FN(void
-skb_handle_key(void),
+FEXP bool
+skb_handle_key(void) FDECLARE
+#ifndef SKB_HAS_IMPL
 {
 	const struct key *keys;
 	enum _SKB_APPLY_KEY_RESULT ret;
-	int usable_key = 0;
+	bool usable_key = false;
 	key_combo[key_combo_count++] = key_buf[0];
 	keys = get_keys_table();
 	for (int i = 0; keys[i].keys != NULL; i++) {
 		ret = _skb_apply_key(&keys[i]);
 		if (ret == _SKB_APPLY_KEY_SUCCESS)
-			return;
+			return true;
 		if (ret == _SKB_APPLY_KEY_USABLE_KEY)
-			usable_key = 1;
+			usable_key = true;
 	}
-	if (!usable_key) {
-		key_combo_count = 0;
-		return;
-	}
-
-	if (usable_key)
-		return;
-	SKB_HANDLE_UNKNOWN_KEY(key_buf, key_combo, key_combo_count)
-	key_combo_count = 0;
-})
+	return usable_key;
+}
+#endif
 
 #undef FEXP /* functions */
 
