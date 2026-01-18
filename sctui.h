@@ -2,6 +2,38 @@
  *
  * Put 'SCTUI_IMPL' to one source file to compile it and use it.
  *
+ * Some function will immediately write the control sequence to stdout.
+ *
+ * Usage:
+ *     // Clear screen.
+ *     // It immediately write the control sequence to terminal.
+ *     void sctui_clear(void);
+ *
+ *     // Commit draw buffer to terminal by write().
+ *     void sctui_commit(struct sctui *sctui);
+ *
+ *     // Move cursor to a position.
+ *     void sctui_cursor(struct sctui *sctui, int x, int y);
+ *
+ *     // Reset terminal to origin.
+ *     void sctui_fini(void);
+ *
+ *     // Get terminal window size to 'sctui->{w,h}'
+ *     void sctui_get_win(struct sctui *sctui);
+ *
+ *     // Get input to keybuf
+ *     void sctui_grab_key(int keybuf[SCTUI_KEYBUF_SIZ]);
+ *
+ *     void sctui_hide_cursor(struct sctui *sctui);
+ *
+ *     // You must init sctui by this before calling
+ *     // any function needed 'sctui'.
+ *     void sctui_init(struct sctui *sctui);
+ *
+ * Version:
+ *     0.1.1: fix(sctui.h): backspace code.
+ *     0.1.0
+ *
  * MIT License
  *
  * Copyright (c) 2026 at2er <xb0515@outlook.com>
@@ -30,7 +62,7 @@
 #include <stdint.h>
 #include <termios.h>
 
-#define KBS '\b' /* 8   backspace    */
+#define KBS 127  /* 127 backspace    (But it is DEL in 'man ascii') */
 #define KCR '\r' /* 13  carriage ret */
 
 #define KCTRL(K) ((K) & 0x1f)
