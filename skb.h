@@ -113,16 +113,17 @@ int  key_combo_count;
 static int
 _skb_compare_key(const char *key, int pressed)
 {
+#define SLASH_KEY(K, C) \
+	if (pressed == (K)) { \
+		if (key[0] == '/' && key[1] == (C)) \
+			return 2; \
+		return 0; \
+	}
 #define SPECIAL_CHR(C) (pressed == (C) && key[0] == (C) && key[1] == (C))
-	if (pressed == KBS) {
-		if (strncmp(key, "/b", 2) == 0)
-			return 2;
-		return 0;
-	} else if (pressed == KCR) {
-		if (strncmp(key, "/r", 2) == 0)
-			return 2;
-		return 0;
-	} else if (iscntrl(pressed)) {
+	SLASH_KEY(KBS,  'b') else
+	SLASH_KEY(KCR,  'r') else
+	SLASH_KEY(KESC, 'e')
+	else if (iscntrl(pressed)) {
 		if (key[0] != '^')
 			return 0;
 		if (KCTRL(key[1]) == KCTRL(pressed))
@@ -132,6 +133,7 @@ _skb_compare_key(const char *key, int pressed)
 	} else if (SPECIAL_CHR('^')) {
 		return 2;
 	}
+#undef SLASH_KEY
 #undef SPECIAL_CHR
 	if (pressed != key[0])
 		return 0;
