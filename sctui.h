@@ -166,8 +166,6 @@ void
 sctui_cursor(struct sctui *sctui, int x, int y)
 {
 	char b[32];
-	if (sctui->cursor_x == x && sctui->cursor_y == y)
-		return;
 	sprintf(b, "\x1b[%u;%uH", y, x);
 	_sctui_buf_append(sctui, b);
 	sctui->cursor_x = x;
@@ -229,6 +227,7 @@ sctui_init(struct sctui *sctui)
 	sctui->buf_size = BUFSIZ;
 	sctui->buf_used = 0;
 	write(STDOUT_FILENO, ESC_CLEAR_SCREEN, strlen(ESC_CLEAR_SCREEN));
+	write(STDOUT_FILENO, "\x1b[1;1H", 6);
 }
 
 void
